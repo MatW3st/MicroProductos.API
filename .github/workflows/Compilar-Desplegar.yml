@@ -1,0 +1,53 @@
+name: Compilar y Desplegar
+
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+    - 'DsiCode.Micro.Product.API/**'
+    - '.github/workflows/Compilar-Desplegar.yml'
+
+env:
+  VERSION_DOTNET: '9.0.x'
+
+jobs:
+  buid:
+    runs-on: ubuntu-latest
+    env:
+    #Solo el nombre del .csproj porque el repor ya esta "en" la carpeta correcta
+    PROYECTO: DsiCode.Micro.Product.API.csproj
+  
+  steps:
+    - name: Checkout
+      uses: actions/checkout@v4.2.2
+
+    - name: Setup .NET SDK ${{env.VERSION_DOTNET }}
+      uses: actions/setup-dotner@v3
+      with:
+        dotnet-version: ${{env.VERSION_DOTNET }}
+        include-prerelease: true
+
+    - name: Verificar SDK instalado
+      run: dotnet --info
+
+      #paso de siagnostico rapido
+    - name: Listar estructura de carpetas
+      run: ls -R .
+
+    - name: Cache Nuget Packages
+      uses: actions/cache@v3
+      with: 
+        path: ~/.nuget/packages
+        key: nuget-${{ runner.os }}-${{hashFiles('**/*.csproj') }}
+        restore-keys: |
+          nuget-${{ runner.os }}-
+
+    - name: Restore dependencies
+      run: dotnet restore ${{ env.PROYECTO }}
+
+    - name: Build
+      run: dotnet build ${{ env.PROYECTO }} --no-restore --configuration Release
+   
